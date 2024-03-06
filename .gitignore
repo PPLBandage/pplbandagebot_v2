@@ -1,0 +1,4 @@
+/.env
+/dataBase.db
+/transfer.py
+/__pycache__
