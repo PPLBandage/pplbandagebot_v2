@@ -154,7 +154,6 @@ async def save() -> InlineKeyboardBuilder:
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(text="Скачать готовый скин", callback_data="download_skin"))
     builder.row(types.InlineKeyboardButton(text="Скачать только повязку", callback_data="download_bandage"))
-    builder.row(types.InlineKeyboardButton(text="Скачать файл настроек", callback_data="download_json"))
     builder.row(types.InlineKeyboardButton(text="Завершить настройку", callback_data="finish"))
     builder.row(types.InlineKeyboardButton(text="« Главное меню", callback_data="keyboard_main_menu"))
     return builder

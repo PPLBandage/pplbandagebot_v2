@@ -1,20 +1,29 @@
-from aiogram import Bot, Dispatcher, types, F
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.filters.command import Command
-from aiogram.types import FSInputFile
+"""
+by AndcoolSystems, 2024
+"""
+
+__version__ = "v2.0 beta"
+
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.fsm.state import StatesGroup, State
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters.command import Command
+from aiogram.fsm.context import FSMContext
 from aiogram.methods import DeleteWebhook
-from prisma import Prisma
-import os
-import asyncio
+from aiogram.utils.markdown import link
+from aiogram.types import FSInputFile
 from dotenv import load_dotenv
+from prisma import Prisma
+from io import BytesIO
 import datetime, pytz
+import help_render
+import keyboards
+import asyncio
+import client
 import math
 import time
-import client
-from io import BytesIO
-import keyboards
+import os
+
 
 load_dotenv()
 bot = Bot(token=os.getenv("TOKEN"))
@@ -29,6 +38,7 @@ class States(StatesGroup):
     wait_to_review = State()
     wait_to_support = State()
     wait_to_support_answer = State()
+    wait_to_json = State()
 
 
 async def render_and_edit(client: client.Client, state: FSMContext):
@@ -101,6 +111,35 @@ async def reviews(message: types.Message, state: FSMContext):
     await message.answer(await generate_reviews_page(0, message.chat.id == -1001980044675), 
                          parse_mode="Markdown",
                          reply_markup=builder.as_markup())
+    
+
+@dp.message(Command('help'))
+async def reviews(message: types.Message, state: FSMContext):
+    await state.clear()
+    discord_link = link('Дискорд', 'https://discordapp.com/users/812990469482610729/')
+    post_link = link('Пост', 'https://discord.com/channels/447699225078136832/1114275416404922388')
+    site_link = link('сайт', 'https://pplbandagebot.ru')
+    shape_link = link('Шейп — Студия Minecraft', 'https://vk.com/shapestd')
+    content = "PPL повязка - это бот, созданный для добавления повязки Пепеленда на ваш скин.\n" + \
+    "Для начала работы с ботом, отправьте /start и следуйте дальнейшим инструкциям.\n\n" + \
+    f"При возникновении вопросов или ошибок обращайтесь в {discord_link}\nили *отправив команду* /support\n\n" + \
+    f"*Текущая версия:* {__version__}\n" + \
+    f"*Полезные ссылки:*\n{post_link} в идеях\nОфициальный {site_link}\n" + \
+    f"*Created by AndcoolSystems, 2024\nПродакшн:* {shape_link}\n\n"
+
+    donations = await db.donations.find_many(order={"value": "desc"})
+    content += "*Люди, поддержавшие прект:*\n"
+    for i, donation in enumerate(donations):
+        content += f"*{i + 1}. {donation.nickname}* – {round(donation.value, 2)} *RUB*\n"
+
+    image = help_render.render()
+    bio = BytesIO()
+    bio.name = "render.png"
+    image.save(bio, "PNG")
+    bio.seek(0)
+    photo = types.BufferedInputFile(file=bio.read(), filename="render.png")
+
+    await message.answer_photo(photo=photo, caption=content, parse_mode="Markdown")
 
 
 @dp.message(F.text, States.wait_to_skin)
@@ -223,11 +262,6 @@ async def manual_select_slim(callback: types.CallbackQuery, state: FSMContext):
 
 @dp.callback_query(F.data.startswith("keyboard_"))
 async def keyb(callback: types.CallbackQuery, state: FSMContext):
-    settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
-    if not settings_message:
-        await callback.message.answer("Извините, не удалось найти сообщение с настройками!\nПожалуйста, отправьте /start и попробуйте снова")
-        return
-
     _client: client.Client = (await state.get_data()).get("client", None)
     if not _client:
         await client.sessionPizda(callback.message)
@@ -265,6 +299,7 @@ async def keyb(callback: types.CallbackQuery, state: FSMContext):
             builder = await keyboards.custom_color()
             await state.set_state(States.wait_to_color)
         case "general_settings":
+            await state.set_state(None)
             builder, caption = await keyboards.main_settings(_client)
         case "view_settings":
             builder, caption = await keyboards.view_settings(_client)
@@ -272,7 +307,7 @@ async def keyb(callback: types.CallbackQuery, state: FSMContext):
             caption = "Выберите, что сохранить:"
             builder = await keyboards.save()
 
-    message = await settings_message.edit_caption(caption=caption, reply_markup=builder.as_markup(), parse_mode="Markdown")
+    message = await callback.message.edit_caption(caption=caption, reply_markup=builder.as_markup(), parse_mode="Markdown")
     await state.update_data(prewiew_id=message)
 
 
@@ -367,8 +402,7 @@ async def general_settings(callback: types.CallbackQuery, state: FSMContext):
             _client.overlay = not _client.overlay
         case "skintype":
             builder: InlineKeyboardBuilder = await keyboards.build_manual_skin_selection("main_settings")
-            settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
-            message = await settings_message.edit_caption(caption="Выберите тип скина:", reply_markup=builder.as_markup(), parse_mode="Markdown")
+            message = await callback.message.edit_caption(caption="Выберите тип скина:", reply_markup=builder.as_markup(), parse_mode="Markdown")
             await state.update_data(prewiew_id=message)
             return
         case "bodypart":
@@ -391,20 +425,17 @@ async def general_settings(callback: types.CallbackQuery, state: FSMContext):
             return_to_settings = False
             _client.back_view = False
             _client.pose = 0
-
     await render_and_edit(_client, state)
 
-    settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
     builder, caption = (await keyboards.main_settings(_client)) if return_to_settings else (await keyboards.view_settings(_client))
-    message = await settings_message.edit_caption(caption=caption, reply_markup=builder.as_markup(), parse_mode="Markdown")
+    message = await callback.message.edit_caption(caption=caption, reply_markup=builder.as_markup(), parse_mode="Markdown")
     await state.update_data(prewiew_id=message)
 
 
 @dp.callback_query(F.data == "finish")
 async def finish(callback: types.CallbackQuery, state: FSMContext):
-    settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
     builder = await keyboards.finish()
-    message = await settings_message.edit_caption(caption="Заврешить? После завершения отредактировать скин будет невозможно!", 
+    message = await callback.message.edit_caption(caption="Заврешить? После завершения отредактировать скин будет невозможно!", 
                                                   reply_markup=builder.as_markup(), 
                                                   parse_mode="Markdown")
     await state.update_data(prewiew_id=message)
@@ -413,7 +444,6 @@ async def finish(callback: types.CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data.startswith("download_"))
 async def save_handler(callback: types.CallbackQuery, state: FSMContext):
     _setting = callback.data.replace("download_", "")
-    _settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
     _client: client.Client = (await state.get_data()).get("client", None)
     if not _client:
         await client.sessionPizda(callback.message)
@@ -440,9 +470,8 @@ async def save_handler(callback: types.CallbackQuery, state: FSMContext):
             await callback.message.answer_document(data, caption="Файл настроек")
             await callback.answer()
         case "finish_confirm":
-            await _settings_message.delete()
+            await callback.message.delete()
             await state.clear()
-
 
 
 # -------------------- REVIEWS --------------------

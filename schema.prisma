@@ -25,3 +25,10 @@ model user {
   badge       String  @default("")
   custom_nick String  @default("")
 }
+
+model donations {
+  id          Int     @id @default(autoincrement())
+  user_id     BigInt  @default(0)
+  nickname    String  @default("")
+  value       Float   @default(0)
+}

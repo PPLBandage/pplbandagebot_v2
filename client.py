@@ -213,7 +213,7 @@ class Client:
         self.pepes: List[str] = ["pepe.png", "pepe_1.png"]
         self.bandage: Image.Image = None  # Bandage image
 
-    def export_JSON(self):
+    def export_JSON(self) -> str:
         params = {
             "position": self.position, 
             "firstLayer": self.first_layer, 
@@ -227,6 +227,17 @@ class Client:
 
         json_object = json.dumps(params, indent=4)
         return json_object
+
+    def import_JSON(self, string: str) -> None:
+        object_ = json.loads(string)
+        self.position = int(object_["position"])
+        self.first_layer = int(object_["firstLayer"])
+        self.overlay = object_["overlay"]
+        self.body_part = int(object_["bodyPart"])
+        self.clear_pixeles = object_["clearPixeles"]
+        self.pepe_type = int(object_["pepeType"])
+        self.pepe_image_id = object_["pepeImage"]
+        self.custom_color = tuple(object_["customColor"])
 
     async def rerender(self):
         self.position = min(self.position, self.change_range)
