@@ -1,11 +1,8 @@
 from minePi.player import Player
 from minePi.skin import Skin
-import minePi.utils as utils
 from PIL import Image, ImageOps
-import json
 from typing import Tuple, List
 import asyncio
-from contextlib import suppress
 
 body_part_x = [32, 16, 40, 0]
 body_part_y = [52, 52, 20, 20]
@@ -34,9 +31,7 @@ async def delete_message(message, sleep_time: int = 0):
 
 
 async def sessionPizda(msg):
-    await msg.answer(
-        "Упс. Ваша сессия была завершена\nПожалуйста, отправьте /start для начала работы"
-    )
+    await msg.answer("Упс. Ваша сессия была завершена\nПожалуйста, отправьте /start для начала работы")
 
 
 def null_add(number: int) -> str:
@@ -187,8 +182,7 @@ def to64(skin: Image.Image) -> Image:
     new_img.paste(arm_1_m, (40, 48), arm_1_m)
     return new_img
 
-def prerender(raw_skin: Image.Image):
-    """Get some info about skin"""
+
 class Client:
     def __init__(self):
         self.slim: bool = None  # Skin is slim
@@ -212,32 +206,6 @@ class Client:
         self.pose: int = 0  # Pose id
         self.pepes: List[str] = ["pepe.png", "pepe_1.png"]
         self.bandage: Image.Image = None  # Bandage image
-
-    def export_JSON(self) -> str:
-        params = {
-            "position": self.position, 
-            "firstLayer": self.first_layer, 
-            "overlay": self.overlay, 
-            "bodyPart": self.body_part, 
-            "clearPixeles": self.clear_pixeles,
-            "pepeType": self.pepe_type,
-            "pepeImage": self.pepe_image_id,
-            "customColor": self.custom_color
-        }
-
-        json_object = json.dumps(params, indent=4)
-        return json_object
-
-    def import_JSON(self, string: str) -> None:
-        object_ = json.loads(string)
-        self.position = int(object_["position"])
-        self.first_layer = int(object_["firstLayer"])
-        self.overlay = object_["overlay"]
-        self.body_part = int(object_["bodyPart"])
-        self.clear_pixeles = object_["clearPixeles"]
-        self.pepe_type = int(object_["pepeType"])
-        self.pepe_image_id = object_["pepeImage"]
-        self.custom_color = tuple(object_["customColor"])
 
     async def rerender(self):
         self.position = min(self.position, self.change_range)
