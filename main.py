@@ -358,7 +358,6 @@ async def custom_color(message: types.Message, state: FSMContext):
         await client.sessionPizda(message)
         return
     await message.delete()
-    await state.set_state(None)
     message_context = message.text.lstrip("#")
     input1 = message_context.split(", ")
     input2 = message_context.split(",")
