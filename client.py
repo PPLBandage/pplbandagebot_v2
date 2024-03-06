@@ -1,4 +1,3 @@
-from minePi.player import Player
 from minePi.skin import Skin
 from PIL import Image, ImageOps
 from typing import Tuple, List
@@ -26,7 +25,7 @@ async def delete_message(message, sleep_time: int = 0):
     await asyncio.sleep(sleep_time)
     try:
         await message.delete()
-    except:
+    except Exception:
         pass
 
 
@@ -58,7 +57,7 @@ def paste(img: Image.Image, img_to_paste: Image.Image, pos: Tuple[float, float])
             r, g, b, t = _img_to_paste.getpixel((x, y))
             try:
                 _img.putpixel((x + pos[0], y + pos[1]), (r, g, b, t))
-            except:
+            except Exception:
                 pass
     return _img
 
@@ -76,7 +75,8 @@ def average_color(image: Image.Image) -> Tuple[int, int, int]:
                 b_a += b
                 num += 1
     
-    if num == 0: return (255, 255, 255)
+    if num == 0:
+        return (255, 255, 255)
     return (255 - round(r_a / num), 255 - round(g_a / num), 255 - round(b_a / num))
 
 
@@ -89,7 +89,7 @@ def fill(image: Image.Image, color: Tuple[int, int, int]) -> Image.Image:
             try:
                 if t != 0 and r == g == b: 
                     image.putpixel((x, y), (round((r / 255) * color[0]), round((g / 255) * color[1]), round((b / 255) * color[2]), t))
-            except:
+            except Exception:
                 pass
     return image
 
@@ -100,7 +100,7 @@ def clear(image: Image.Image, pos: Tuple[int, int], height: int) -> Image.Image:
         for x in range(16):
             try:
                 image.putpixel((x + pos[0], y + pos[1]), (0, 0, 0, 0))
-            except:
+            except Exception:
                 pass
     return image
 
@@ -286,4 +286,6 @@ class Client:
         renderBack = Image.new(mode="RGBA", size=(height + 40, height + 40), color=self.average_color)
         renderBack.paste(skin_base, (round((height_1 + 40) / 2 - (width_1 / 2)), 20), skin_base)
         renderBack.paste(skin, (round((height + 40) / 2 - (width / 2)), 20), skin)
+        skin.close()
+        skin_base.close()
         return renderBack

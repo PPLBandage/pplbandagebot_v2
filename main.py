@@ -12,14 +12,16 @@ from aiogram.fsm.context import FSMContext
 from aiogram.methods import DeleteWebhook
 from aiogram.utils.markdown import link
 from aiogram.types import FSInputFile
+from minePi.player import Player
 from dotenv import load_dotenv
 from prisma import Prisma
 from io import BytesIO
-import datetime, pytz
 import help_render
 import keyboards
+import datetime
 import asyncio
 import client
+import pytz
 import math
 import time
 import os
@@ -57,8 +59,10 @@ async def render_and_edit(client: client.Client, state: FSMContext):
                                            message_id=preview_id.message_id,
                                            reply_markup=preview_id.reply_markup)
         await state.update_data(prewiew_id=msg)
-    except:
+    except Exception:
         pass
+    finally:
+        skin_rer.close()
 
 
 @dp.message(Command('start'))
@@ -69,7 +73,7 @@ async def start(message: types.Message, state: FSMContext):
     caption_text = "Привет👋! Давай начнём.\nОтправь мне свой ник или развёртку скина *как файл*"
         
     msg = await message.answer_photo(
-        photo=FSInputFile(f"res/presets/start.png"),
+        photo=FSInputFile("res/presets/start.png"),
         caption=caption_text,
         parse_mode="Markdown"
     )
@@ -113,7 +117,7 @@ async def reviews(message: types.Message, state: FSMContext):
     
 
 @dp.message(Command('help'))
-async def reviews(message: types.Message, state: FSMContext):
+async def help(message: types.Message, state: FSMContext):
     await state.clear()
     discord_link = link('Дискорд', 'https://discordapp.com/users/812990469482610729/')
     post_link = link('Пост', 'https://discord.com/channels/447699225078136832/1114275416404922388')
@@ -139,6 +143,7 @@ async def reviews(message: types.Message, state: FSMContext):
     photo = types.BufferedInputFile(file=bio.read(), filename="render.png")
 
     await message.answer_photo(photo=photo, caption=content, parse_mode="Markdown")
+    image.close()
 
 
 @dp.message(F.text, States.wait_to_skin)
@@ -147,9 +152,9 @@ async def skin_nick(message: types.Message, state: FSMContext):
     settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
     _client: client.Client = (await state.get_data()).get("client", None)
 
-    mc_class = client.Player(name=message.text)  # create a Player object by UUID
+    mc_class = Player(name=message.text)  # create a Player object by UUID
     await mc_class.initialize()  # Fetch player data
-    if mc_class._raw_skin == None:  # If player not found
+    if not mc_class._raw_skin:  # If player not found
         message = await message.answer("Аккаунт с таким именем не найден(")
         asyncio.create_task(client.delete_message(message, 5))
         return
@@ -232,7 +237,7 @@ async def skin_file(message: types.Message, state: FSMContext):
 
 
 @dp.message(F.photo, States.wait_to_skin)
-async def skin_file(message: types.Message, state: FSMContext):
+async def skin_file_send(message: types.Message, state: FSMContext):
     await message.delete()
     message = await message.answer("Пожалуйста, отправьте скин *как файл*", parse_mode="Markdown")
     asyncio.create_task(client.delete_message(message, 5))
@@ -376,7 +381,7 @@ async def custom_color(message: types.Message, state: FSMContext):
         _client.custom_color = colour
         _client.pepe_image_id = None
         await render_and_edit(_client, state)
-    except:
+    except Exception:
         message = await message.answer("Не удалось получить цвет\nПопробуйте ещё раз")
         asyncio.create_task(client.delete_message(message, 10))
 
@@ -487,7 +492,7 @@ async def generate_reviews_page(page: int, admin: bool) -> str:
         user = await db.user.find_first(where={"user_id": review.user_id})
         try:
             member_full_name = (await bot.get_chat_member(review.user_id, review.user_id)).user.full_name
-        except:
+        except Exception:
             member_full_name = "Not found"
 
         username = member_full_name if not user or (user and not user.custom_nick) else user.custom_nick
@@ -521,7 +526,7 @@ async def review_stars(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(States.wait_to_review)
 
     builder = InlineKeyboardBuilder()
-    builder.row(types.InlineKeyboardButton(text="Отмена", callback_data=f"review_deny"))
+    builder.row(types.InlineKeyboardButton(text="Отмена", callback_data="review_deny"))
     await callback.message.edit_text(text="Теперь опишите работу бота *одним* сообщением", 
                                      parse_mode="Markdown",
                                      reply_markup=builder.as_markup())
@@ -613,7 +618,7 @@ async def support_send_answer(message: types.Message, state: FSMContext):
 
 
 @dp.callback_query(F.data.startswith("user_"))
-async def save_handler(callback: types.CallbackQuery, state: FSMContext):
+async def user_action(callback: types.CallbackQuery, state: FSMContext):
     _setting = callback.data.replace("user_", "")
 
     if _setting.startswith("delete"):
@@ -657,7 +662,7 @@ async def start_bot():
             await bot(DeleteWebhook(drop_pending_updates=True))
             await dp.start_polling(bot)
             started = False
-        except:
+        except Exception:
             started = True
             print("An error has occurred, reboot in 10 seconds")
             time.sleep(10)

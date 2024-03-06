@@ -822,9 +822,12 @@ class Render:
                                 volume_points[i][16 * hd_ratio][1]],
                                 color))
             if self.man_slim != 0: 
-                if self.man_slim == 1: start = 0
-                elif self.man_slim == 2: start = 1
-            else: start = 1 if self.player.is_slim else 0
+                if self.man_slim == 1: 
+                    start = 0
+                elif self.man_slim == 2: 
+                    start = 1
+            else: 
+                start = 1 if self.player.is_slim else 0
             """Right arm"""
             volume_points = {}
             for i in range(start, 5 * hd_ratio):

@@ -11,7 +11,8 @@ def render() -> Image.Image:
     name = random.choice(persons)
     person = Image.open(f"res/persons/help/{name}")
     base.paste(person, (0, 0), person)
-
+    person.close()
+    
     # Drawing a person nickname
     draw = ImageDraw.Draw(base)
     font = ImageFont.truetype('res/font.otf', 30)  
