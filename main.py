@@ -2,7 +2,7 @@
 by AndcoolSystems, 2024
 """
 
-__version__ = "v2.0 beta"
+__version__ = "v2.1 beta"
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.state import StatesGroup, State
@@ -23,7 +23,6 @@ import client
 import math
 import time
 import os
-
 
 load_dotenv()
 bot = Bot(token=os.getenv("TOKEN"))
@@ -145,8 +144,9 @@ async def reviews(message: types.Message, state: FSMContext):
 @dp.message(F.text, States.wait_to_skin)
 async def skin_nick(message: types.Message, state: FSMContext):
     await message.delete()
-
+    settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
     _client: client.Client = (await state.get_data()).get("client", None)
+
     mc_class = client.Player(name=message.text)  # create a Player object by UUID
     await mc_class.initialize()  # Fetch player data
     if mc_class._raw_skin == None:  # If player not found
@@ -172,25 +172,27 @@ async def skin_nick(message: types.Message, state: FSMContext):
     
     _client.average_color = client.average_color(_client.default_skin)
 
-    await render_and_edit(_client, state)
-    builder = await keyboards.main_menu()
-    settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
-    await settings_message.edit_caption(reply_markup=builder.as_markup(), parse_mode="Markdown")
-    await state.set_state(state=None)  # clear state
-
     if not bool(_client.raw_skin.getpixel((46, 52))[3]) and not bool(_client.raw_skin.getpixel((45, 52))[3]):
         builder = await keyboards.build_manual_skin_selection()
         message = await settings_message.edit_caption(caption="Извините, боту не удалось корректно определить тип вашего скина.\nПожалуйста, выберете правильный:", 
                                                       reply_markup=builder.as_markup(), 
                                                       parse_mode="Markdown")
         await state.update_data(messages=message)
+        return
+    _client.slim = not bool(_client.raw_skin.getpixel((46, 52))[3])
+
+    await render_and_edit(_client, state)
+    builder = await keyboards.main_menu()
+    await settings_message.edit_caption(reply_markup=builder.as_markup(), parse_mode="Markdown")
+    await state.set_state(state=None)  # clear state
 
 
 @dp.message(F.document, States.wait_to_skin)
 async def skin_file(message: types.Message, state: FSMContext):
     await message.delete()
     _client: client.Client = (await state.get_data()).get("client", None)
-
+    settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
+    
     document = message.document
     file_id = document.file_id
     bio = BytesIO()
@@ -214,18 +216,19 @@ async def skin_file(message: types.Message, state: FSMContext):
     
     _client.average_color = client.average_color(_client.default_skin)
 
-    await render_and_edit(_client, state)
-    builder = await keyboards.main_menu()
-    settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
-    await settings_message.edit_caption(reply_markup=builder.as_markup(), parse_mode="Markdown")
-    await state.set_state(state=None)  # clear state
-
     if not bool(_client.raw_skin.getpixel((46, 52))[3]) and not bool(_client.raw_skin.getpixel((45, 52))[3]):
         builder = await keyboards.build_manual_skin_selection()
         message = await settings_message.edit_caption(caption="Извините, боту не удалось корректно определить тип вашего скина.\nПожалуйста, выберете правильный:", 
                                                       reply_markup=builder.as_markup(), 
                                                       parse_mode="Markdown")
         await state.update_data(messages=message)
+        return
+    _client.slim = _client.manual_slim = not bool(_client.raw_skin.getpixel((46, 52))[3])
+
+    await render_and_edit(_client, state)
+    builder = await keyboards.main_menu()
+    await settings_message.edit_caption(reply_markup=builder.as_markup(), parse_mode="Markdown")
+    await state.set_state(state=None)  # clear state
 
 
 @dp.message(F.photo, States.wait_to_skin)
