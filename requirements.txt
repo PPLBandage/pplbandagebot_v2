@@ -1,0 +1,7 @@
+aiogram
+python-dotenv
+prisma
+datetime
+pytz
+Pillow
+numpy

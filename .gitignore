@@ -7,3 +7,4 @@
 /res/persons
 /res/presets
 /minePi/__pycache__
+/.ruff_cache

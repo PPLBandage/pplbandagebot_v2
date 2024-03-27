@@ -1,0 +1,9 @@
+services:
+  ppl_bot2:
+    container_name: ppl_bot2
+    volumes:
+      - /root/ppl_bot_2:/app
+    build: 
+      context: ./
+      dockerfile: Dockerfile
+    restart: unless-stopped

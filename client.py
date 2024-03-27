@@ -63,7 +63,7 @@ def paste(img: Image.Image, img_to_paste: Image.Image, pos: Tuple[float, float])
 
 
 def average_color(image: Image.Image) -> Tuple[int, int, int]:
-    image = image.copy().convert("RGBA")
+    image = image.convert("RGBA")
     width, height = image.size
     r_a, g_a, b_a, num = 0, 0, 0, 0
     for y in range(height):
@@ -81,7 +81,7 @@ def average_color(image: Image.Image) -> Tuple[int, int, int]:
 
 
 def fill(image: Image.Image, color: Tuple[int, int, int]) -> Image.Image:
-    image = image.copy().convert("RGBA")
+    image = image.convert("RGBA")
     width, height = image.size
     for y in range(height):
         for x in range(width):
@@ -95,7 +95,7 @@ def fill(image: Image.Image, color: Tuple[int, int, int]) -> Image.Image:
 
 
 def clear(image: Image.Image, pos: Tuple[int, int], height: int) -> Image.Image:
-    image = image.copy().convert("RGBA")
+    image = image.convert("RGBA")
     for y in range(height):
         for x in range(16):
             try:
@@ -120,6 +120,7 @@ def crop_pepe(filename: str, body_part: int, slim: bool, height: int) -> Image.I
         result_image = paste(result_image, img_right, (0, 0))
         paste_position = 8 if not (slim and (body_part == 0 or filename == "res/pepes/pepe_1.png" or body_part == 2)) else 6
         result_image = paste(result_image, img_left, (paste_position, 0))
+    image.close()
     return result_image
 
 

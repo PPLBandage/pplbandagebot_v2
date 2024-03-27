@@ -2,7 +2,7 @@
 by AndcoolSystems, 2024
 """
 
-__version__ = "v2.1 beta"
+__version__ = "v2.2"
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.state import StatesGroup, State
@@ -70,6 +70,7 @@ async def start(message: types.Message, state: FSMContext):
     """Хэндлер для команды /start"""
 
     await state.clear()
+    await message.answer("**Попробуй функционал бота на сайте! https://pplbandage.ru/**", parse_mode="Markdown")
     caption_text = "Привет👋! Давай начнём.\nОтправь мне свой ник или развёртку скина *как файл*"
         
     msg = await message.answer_photo(
@@ -127,7 +128,7 @@ async def help(message: types.Message, state: FSMContext):
     "Для начала работы с ботом, отправьте /start и следуйте дальнейшим инструкциям.\n\n" + \
     f"При возникновении вопросов или ошибок обращайтесь в {discord_link}\nили *отправив команду* /support\n\n" + \
     f"*Текущая версия:* {__version__}\n" + \
-    f"*Полезные ссылки:*\n{post_link} в идеях\nОфициальный {site_link}\n" + \
+    f"*Полезные ссылки:*\n{post_link} в идеях\nОфициальный {site_link}\n\n" + \
     f"*Created by AndcoolSystems, 2024\nПродакшн:* {shape_link}\n\n"
 
     donations = await db.donations.find_many(order={"value": "desc"})
@@ -366,18 +367,15 @@ async def custom_color(message: types.Message, state: FSMContext):
         await client.sessionPizda(message)
         return
     await message.delete()
-    message_context = message.text.lstrip("#")
-    input1 = message_context.split(", ")
-    input2 = message_context.split(",")
+    message_context = message.text.replace("#", "").replace(" ", "")
+    splitted = message_context.split(",")
 
     try:
-        if len(input1) == 1 and len(input2) == 1:
-            colour = tuple(int(message_context[i : i + 2], 16) for i in (0, 2, 4))
+        if len(splitted) == 3:
+            colour = (int(splitted[0]), int(splitted[1]), int(splitted[2]))
         else:
-            if len(input1) == 1:
-                colour = (int(input2[0]), int(input2[1]), int(input2[2]))
-            else:
-                colour = (int(input1[0]), int(input1[1]), int(input1[2]))
+            colour = tuple(int(message_context[i : i + 2], 16) for i in (0, 2, 4))
+        
         _client.custom_color = colour
         _client.pepe_image_id = None
         await render_and_edit(_client, state)
@@ -465,6 +463,7 @@ async def save_handler(callback: types.CallbackQuery, state: FSMContext):
             photo = types.BufferedInputFile(file=bio.read(), filename="skin.png")
             await callback.message.answer_document(photo, caption="Готовый скин")
             await callback.answer()
+            await callback.message.answer("Вы можете оставить отзыв, отправив команду /review")
         case "bandage":
             bio.name = "bandage.png"
             _client.bandage.save(bio, "PNG")
