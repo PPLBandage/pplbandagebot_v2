@@ -93,6 +93,12 @@ async def support(message: types.Message, state: FSMContext):
     await state.set_state(States.wait_to_support)
 
 
+@dp.message(Command('donate'))
+async def support(message: types.Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Вы можете поддержать проект по ссылке\nhttps://www.donationalerts.com/r/andcool_systems")
+
+
 @dp.message(Command('review'))
 async def review(message: types.Message, state: FSMContext):
     await state.clear()

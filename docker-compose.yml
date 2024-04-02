@@ -1,6 +1,8 @@
+version: "3.8"
 services:
   ppl_bot2:
     container_name: ppl_bot2
+    mem_limit: 200m
     volumes:
       - /root/ppl_bot_2:/app
     build: 
