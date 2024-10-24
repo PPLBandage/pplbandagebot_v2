@@ -29,7 +29,7 @@ async def delete_message(message, sleep_time: int = 0):
         pass
 
 
-async def sessionPizda(msg):
+async def sessionFailed(msg):
     await msg.answer("Упс. Ваша сессия была завершена\nПожалуйста, отправьте /start для начала работы")
 
 
@@ -199,7 +199,7 @@ class Client:
         self.first_layer: int = 1  # First layer state
         self.overlay: bool = True  # Overlay state
         self.body_part: int = 0  # Part of body (leg/arm)
-        self.clear_pixeles: bool = True  # Clear pixeles under the lining
+        self.clear_pixels: bool = True  # Clear pixels under the lining
         self.pepe_type: int = 0  # default pepe type
         self.change_range: int = 8  # Range of pepe position
         self.pepe_height: int = 4  # Height of pepe
@@ -212,7 +212,7 @@ class Client:
         self.position = min(self.position, self.change_range)
         self.raw_skin = self.default_skin.copy() 
         if self.custom_color:
-            if self.clear_pixeles:  # Clear pixeles uder the pepe
+            if self.clear_pixels:  # Clear pixels under the pepe
                 self.raw_skin = clear(self.raw_skin.copy(), (body_part_x_overlay[self.body_part], body_part_y_overlay[self.body_part] + self.position), self.pepe_height)
 
             if not self.pepe_image_id:  # If pepe is default type

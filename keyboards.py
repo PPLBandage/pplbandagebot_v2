@@ -128,7 +128,7 @@ async def main_settings(_client: client.Client) -> client.Tuple[InlineKeyboardBu
               f"*Оверлей:* {overlay_txt}\n" + \
               f"*Первый слой:* {first_layer_txt}\n" + \
               f"*Часть тела:* {body[_client.body_part]}\n" + \
-              f"*Удаление пикселей над повязкой:* {'Вкл' if _client.clear_pixeles else 'Выкл'}\n"
+              f"*Удаление пикселей над повязкой:* {'Вкл' if _client.clear_pixels else 'Выкл'}\n"
     return builder, content
 
 

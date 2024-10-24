@@ -39,7 +39,6 @@ class States(StatesGroup):
     wait_to_review = State()
     wait_to_support = State()
     wait_to_support_answer = State()
-    wait_to_json = State()
 
 
 async def render_and_edit(client: client.Client, state: FSMContext):
@@ -50,7 +49,7 @@ async def render_and_edit(client: client.Client, state: FSMContext):
     bio.seek(0)
 
     photo = types.BufferedInputFile(file=bio.read(), filename="render.png")
-    preview_id: types.Message = (await state.get_data()).get("prewiew_id")
+    preview_id: types.Message = (await state.get_data()).get("preview_id")
     try:
         msg = await bot.edit_message_media(types.input_media_photo.InputMediaPhoto(media=photo, 
                                                                                    caption=preview_id.caption, 
@@ -58,7 +57,7 @@ async def render_and_edit(client: client.Client, state: FSMContext):
                                            chat_id=preview_id.chat.id,
                                            message_id=preview_id.message_id,
                                            reply_markup=preview_id.reply_markup)
-        await state.update_data(prewiew_id=msg)
+        await state.update_data(preview_id=msg)
     except Exception:
         pass
     finally:
@@ -78,7 +77,7 @@ async def start(message: types.Message, state: FSMContext):
         caption=caption_text,
         parse_mode="Markdown"
     )
-    await state.update_data(prewiew_id=msg)
+    await state.update_data(preview_id=msg)
     await state.update_data(client=client.Client())
     await state.set_state(States.wait_to_skin)
 
@@ -138,7 +137,7 @@ async def help(message: types.Message, state: FSMContext):
     f"*Created by AndcoolSystems, 2024\nПродакшн:* {shape_link}\n\n"
 
     donations = await db.donations.find_many(order={"value": "desc"})
-    content += "*Люди, поддержавшие прект:*\n"
+    content += "*Люди, поддержавшие проект:*\n"
     for i, donation in enumerate(donations):
         content += f"*{i + 1}. {donation.nickname}* – {round(donation.value, 2)} *RUB*\n"
 
@@ -156,7 +155,7 @@ async def help(message: types.Message, state: FSMContext):
 @dp.message(F.text, States.wait_to_skin)
 async def skin_nick(message: types.Message, state: FSMContext):
     await message.delete()
-    settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
+    settings_message: types.Message = (await state.get_data()).get("preview_id", None)
     _client: client.Client = (await state.get_data()).get("client", None)
 
     mc_class = Player(name=message.text)  # create a Player object by UUID
@@ -203,7 +202,7 @@ async def skin_nick(message: types.Message, state: FSMContext):
 async def skin_file(message: types.Message, state: FSMContext):
     await message.delete()
     _client: client.Client = (await state.get_data()).get("client", None)
-    settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
+    settings_message: types.Message = (await state.get_data()).get("preview_id", None)
     
     document = message.document
     file_id = document.file_id
@@ -255,7 +254,7 @@ async def manual_select_slim(callback: types.CallbackQuery, state: FSMContext):
     slim = callback.data.replace("manual_", "").split("-")
     _client: client.Client = (await state.get_data()).get("client", None)
     if not _client:
-        await client.sessionPizda(callback.message)
+        await client.sessionFailed(callback.message)
         return
     
     _client.manual_slim = 1 if slim[0] == "steve" else 2
@@ -263,7 +262,7 @@ async def manual_select_slim(callback: types.CallbackQuery, state: FSMContext):
 
     await render_and_edit(_client, state)
 
-    settings_message: types.Message = (await state.get_data()).get("prewiew_id", None)
+    settings_message: types.Message = (await state.get_data()).get("preview_id", None)
     if slim[1] == "main_menu":
         builder = await keyboards.main_menu()
         await settings_message.edit_caption(reply_markup=builder.as_markup(), parse_mode="Markdown")
@@ -271,15 +270,15 @@ async def manual_select_slim(callback: types.CallbackQuery, state: FSMContext):
     elif slim[1] == "main_settings":
         builder, caption = await keyboards.main_settings(_client)
         message = await settings_message.edit_caption(caption=caption, reply_markup=builder.as_markup(), parse_mode="Markdown")
-        await state.update_data(prewiew_id=message)
+        await state.update_data(preview_id=message)
         return
 
 
 @dp.callback_query(F.data.startswith("keyboard_"))
-async def keyb(callback: types.CallbackQuery, state: FSMContext):
+async def keyboard(callback: types.CallbackQuery, state: FSMContext):
     _client: client.Client = (await state.get_data()).get("client", None)
     if not _client:
-        await client.sessionPizda(callback.message)
+        await client.sessionFailed(callback.message)
         return
 
     builder: InlineKeyboardBuilder = None
@@ -323,15 +322,15 @@ async def keyb(callback: types.CallbackQuery, state: FSMContext):
             builder = await keyboards.save()
 
     message = await callback.message.edit_caption(caption=caption, reply_markup=builder.as_markup(), parse_mode="Markdown")
-    await state.update_data(prewiew_id=message)
+    await state.update_data(preview_id=message)
 
 
 @dp.callback_query(F.data.startswith("ps_"))
 async def style_select_ps(callback: types.CallbackQuery, state: FSMContext):
     _pepe = callback.data.replace("ps_", "")
-    _client: client.Client = (await state.get_data()).get("client", None)
+    _client: client.Client | None = (await state.get_data()).get("client", None)
     if not _client:
-        await client.sessionPizda(callback.message)
+        await client.sessionFailed(callback.message)
         return
     _client.pepe_image_id = _pepe
     _client.custom_color = (0, 0, 0)
@@ -348,9 +347,9 @@ async def style_select_pc(callback: types.CallbackQuery, state: FSMContext):
     _color = callback.data.replace("pc_", "")
     _client: client.Client = (await state.get_data()).get("client", None)
     if not _client:
-        await client.sessionPizda(callback.message)
+        await client.sessionFailed(callback.message)
         return
-    colours = [
+    colors = [
             (61, 58, 201),  # Blue
             (176, 30, 30),  # Red
             (85, 163, 64),  # Yellow
@@ -361,7 +360,7 @@ async def style_select_pc(callback: types.CallbackQuery, state: FSMContext):
             (255, 255, 255),  # White
             (0, 0, 0),  # Black
         ]
-    _client.custom_color = colours[int(_color)]
+    _client.custom_color = colors[int(_color)]
     _client.pepe_image_id = None
     await render_and_edit(_client, state)
 
@@ -370,7 +369,7 @@ async def style_select_pc(callback: types.CallbackQuery, state: FSMContext):
 async def custom_color(message: types.Message, state: FSMContext):
     _client: client.Client = (await state.get_data()).get("client", None)
     if not _client:
-        await client.sessionPizda(message)
+        await client.sessionFailed(message)
         return
     await message.delete()
     message_context = message.text.replace("#", "").replace(" ", "")
@@ -378,11 +377,11 @@ async def custom_color(message: types.Message, state: FSMContext):
 
     try:
         if len(splitted) == 3:
-            colour = (int(splitted[0]), int(splitted[1]), int(splitted[2]))
+            color = (int(splitted[0]), int(splitted[1]), int(splitted[2]))
         else:
-            colour = tuple(int(message_context[i : i + 2], 16) for i in (0, 2, 4))
+            color = tuple(int(message_context[i : i + 2], 16) for i in (0, 2, 4))
         
-        _client.custom_color = colour
+        _client.custom_color = color
         _client.pepe_image_id = None
         await render_and_edit(_client, state)
     except Exception:
@@ -395,7 +394,7 @@ async def general_settings(callback: types.CallbackQuery, state: FSMContext):
     _setting = callback.data.replace("sett_", "")
     _client: client.Client = (await state.get_data()).get("client", None)
     if not _client:
-        await client.sessionPizda(callback.message)
+        await client.sessionFailed(callback.message)
         return
     return_to_settings = True
     match _setting:
@@ -408,13 +407,13 @@ async def general_settings(callback: types.CallbackQuery, state: FSMContext):
             if _client.first_layer > 2:
                 _client.first_layer = 0
         case "delpix":
-            _client.clear_pixeles = not _client.clear_pixeles
+            _client.clear_pixels = not _client.clear_pixels
         case "overlay":
             _client.overlay = not _client.overlay
         case "skintype":
             builder: InlineKeyboardBuilder = await keyboards.build_manual_skin_selection("main_settings")
             message = await callback.message.edit_caption(caption="Выберите тип скина:", reply_markup=builder.as_markup(), parse_mode="Markdown")
-            await state.update_data(prewiew_id=message)
+            await state.update_data(preview_id=message)
             return
         case "bodypart":
             _client.body_part += 1
@@ -440,16 +439,16 @@ async def general_settings(callback: types.CallbackQuery, state: FSMContext):
 
     builder, caption = (await keyboards.main_settings(_client)) if return_to_settings else (await keyboards.view_settings(_client))
     message = await callback.message.edit_caption(caption=caption, reply_markup=builder.as_markup(), parse_mode="Markdown")
-    await state.update_data(prewiew_id=message)
+    await state.update_data(preview_id=message)
 
 
 @dp.callback_query(F.data == "finish")
 async def finish(callback: types.CallbackQuery, state: FSMContext):
     builder = await keyboards.finish()
-    message = await callback.message.edit_caption(caption="Заврешить? После завершения отредактировать скин будет невозможно!", 
+    message = await callback.message.edit_caption(caption="Завершить? После завершения отредактировать скин будет невозможно!", 
                                                   reply_markup=builder.as_markup(), 
                                                   parse_mode="Markdown")
-    await state.update_data(prewiew_id=message)
+    await state.update_data(preview_id=message)
 
 
 @dp.callback_query(F.data.startswith("download_"))
@@ -457,7 +456,7 @@ async def save_handler(callback: types.CallbackQuery, state: FSMContext):
     _setting = callback.data.replace("download_", "")
     _client: client.Client = (await state.get_data()).get("client", None)
     if not _client:
-        await client.sessionPizda(callback.message)
+        await client.sessionFailed(callback.message)
         return
     
     bio = BytesIO()
