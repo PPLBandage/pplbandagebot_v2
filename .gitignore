@@ -1,11 +1,6 @@
 /.env
 /dataBase.db
-/transfer.py
 /__pycache__
-/res/lining/colored
-/res/pepes/colored
-/res/persons
-/res/presets
 /minePi/__pycache__
 /.ruff_cache
 /.vscode
